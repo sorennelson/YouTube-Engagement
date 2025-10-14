@@ -1,0 +1,96 @@
+channel_id,output,date
+UCZcR2SVWaGWNlMqPxvQS3vw,"- **Improvement Area:** Content focus (topic & guest selection)  
+  **Recommendation:** Prioritize booking and promoting high-profile guests and deep-dive A.I. topics (Demis Hassabis, Sam Altman–type interviews) as flagship long-form episodes; when those aren’t available, create long-form episodes around exclusive/analysis pieces on big A.I. product launches (e.g., NotebookLM-style demos).  
+  **Rationale:** The five top-performing videos are long interviews or deep demos tied to named people/products (Demis, Sam Altman, NotebookLM) and deliver 74k–117k views vs. recent short clips that mostly sit in the 1k–11k range. Long-form, guest-driven episodes also produce far more likes/comments (1.2k–2.2k likes, 93–277 comments) than recent uploads.  
+  **Confidence:** 90%
+
+- **Improvement Area:** Title format and topic signal  
+  **Recommendation:** Always put the guest name or concrete product name and a one-line hook at the front of the title (e.g., “Demis Hassabis on AGI Timelines | EP 71” or “Sam Altman on OpenAI Lawsuit and Talent Poaching | Interview”). Use “Interview” / “EP #” / “Clip” consistently to set expectations.  
+  **Rationale:** Top videos almost always include a recognizable person or product in the title; recent short/generic titles (e.g., “Is A.I. Video the Future of Social Media?”) have markedly lower views. Strong name/product signals increase discoverability and click-through for topical search and subscribers.  
+  **Confidence:** 88%
+
+- **Improvement Area:** Duration strategy (long-form vs short)  
+  **Recommendation:** Make long-form episodes (≥20 minutes) the core weekly deliverable; avoid replacing flagship long episodes with many <3-minute shorts. Repurpose each long episode into a few 8–20 minute clips (focused, named, timestamped) rather than only sub-3-minute shorts.  
+  **Rationale:** Channel-level data: Long Form (≥20M) average views ≈10,330—much higher than Short (<3M) ≈2,619 or Clip (<20M) ≈2,760. The single recent long episode (AgentKit, 1h7m) outperformed shorter recent uploads by a large margin (~10k vs ~1k–1.4k). Top performers are long, in-depth pieces.  
+  **Confidence:** 92%
+
+- **Improvement Area:** Clip titling and selection for repurposing  
+  **Recommendation:** When publishing clips, title them to highlight the exact quote/controversy + guest name (e.g., “Sam Altman on the NYT Lawsuit — ‘We’ll Keep Fighting’ | Clip”). Favor 8–20 minute clips with a clear hook, not 1–2 minute micro-shorts unless they are extremely viral-ready.  
+  **Rationale:** A 35-minute NotebookLM clip and 33–56 minute guest clips are top performers; 16-minute clip (Drama with MrBeast…) underperformed, likely because it lacked a single, searchable high-profile guest anchor in the title and didn’t compress the hook. Clear hook + name = better discovery and higher per-clip watch time.  
+  **Confidence:** 85%
+
+- **Improvement Area:** Descriptions, chapters and metadata completeness  
+  **Recommendation:** Use full, consistent episode descriptions: include guest bio, links, “additional reading,” chapter timestamps, and 8–12 relevant tags. Adopt the long-form descriptions used on top-performing videos as a template for every release (including clips).  
+  **Rationale:** Top videos show long, structured descriptions with chapters and links; several recent uploads have minimal descriptions and empty tag fields. Detailed descriptions and chapters improve SEO, watch-time (via navigation), and credibility — correlating with higher views and engagement on the top posts.  
+  **Confidence:** 87%
+
+- **Improvement Area:** Calls-to-action to drive likes/comments  
+  **Recommendation:** Add a short, specific on-camera or voice CTA in each episode inviting one concrete action (e.g., “Tell us: Do you trust Sora video? Comment ‘Yes’ or ‘No’ and why”). Pin a question as the top comment and repeat it in the description/timestamps to seed conversation.  
+  **Rationale:** Higher-comment videos are the long interviews that naturally provoke debate. Recent clips lack prompts and have very low comments (0–4). Explicit, specific CTAs in the video/description will raise comment rates and likes on lower-performing uploads.  
+  **Confidence:** 75%
+
+- **Improvement Area:** Posting cadence and flagship scheduling  
+  **Recommendation:** Keep a predictable weekly cadence for the flagship long episode (same day/time) and publish 1–2 supportive clips across the week (mid-week clip, short highlight) timed to drive interest back to the long episode. Avoid many daily micro-posts that cannibalize attention.  
+  **Rationale:** Top long-form episodes appear to function as weekly flagship events that attract most views. While the channel has posted daily shorts recently with low returns, the highest averages come from flagship-style weekly content. A consistent weekly appointment helps build momentum and conversation.  
+  **Confidence:** 78%
+
+- **Improvement Area:** Tagging and search optimization  
+  **Recommendation:** Standardize tags across episodes to include guest names, show name (“Hard Fork”), umbrella topics (AI, AGI, OpenAI, Google, Samsung), and event names (Google I/O, DevDay). Add 5–10 high-value tags for each episode and replicate successful tag sets from top videos.  
+  **Rationale:** Top videos include topic- and guest-specific tags; several recent uploads have empty tag lists. Tags help with YouTube recommendations and related-video surfaces—an observable difference between top vs. recent content.  
+  **Confidence:** 80%
+
+Three most impactful changes (estimated effect size):
+1. Prioritize long-form, guest-driven flagship episodes (and promote them): estimated effect +300%–800% views on those episodes compared with current short/generic uploads (Confidence 90%).  
+2. Use guest/product-first title format + repurpose into named 8–20min clips: estimated effect +100%–300% uplift in clip views and improved engagement (likes/comments) versus current clip titles (Confidence 88%).  
+3. Implement full descriptions + chapters + specific CTAs (and pin prompt): estimated effect +20%–60% increase in comments/likes and modest lift in watch time/CTR (Confidence 80%).",2025-10-13
+UCiemDAS1bXMBTx3jIIOukFg,"- **Improvement Area:** Topic selection / video theme  
+  **Recommendation:** Prioritize more AI, big-trend, and data-driven headlines (e.g., “AI”, “Unicorns”, “Industry disruption”) and event/strategy-focused content when choosing clips to publish.  
+  **Rationale:** The two highest-performing videos are AI-focused strategy shorts (906k and 575k views); other top videos cover broad, high-interest subjects (unicorn geography, industry disruption). Recent uploads are mainly summit clips and founder anecdotes that are underperforming relative to trend/top-topic videos.  
+  **Confidence:** High — clear large view-gap between AI/large-trend content and recent summit/founder clips.
+
+- **Improvement Area:** Format & duration mix  
+  **Recommendation:** Publish a higher share of very short punchy clips (<60s) that highlight a single strong insight, alongside the long-form podcast. For each long episode, extract 4–6 distinct 30–60s clips.  
+  **Rationale:** Top-performing assets include very short strategy-session clips with huge view counts. In recent posts, the short Chomps clip (31s) outperformed the 35-minute long form on the same topic, demonstrating the audience’s preference for short, focused moments.  
+  **Confidence:** High — direct within-channel example showing short clip > long form for the same topic.
+
+- **Improvement Area:** Posting cadence  
+  **Recommendation:** Shift toward more frequent short uploads (move more content into the “daily” cadence where feasible) rather than fewer weekly posts. Prioritize daily short clips on high-interest topics.  
+  **Rationale:** Channel-level stats show daily-posted content averaged ~22,170 views vs ~15,266 for weekly — daily cadence correlates with higher average views. Recent batch of short clips posted across several days suggests frequency helps discovery.  
+  **Confidence:** Medium-High — channel cadence data indicates a clear uplift, though causation may include content type.
+
+- **Improvement Area:** Title optimization / front-loading value  
+  **Recommendation:** Front-load titles with the core hook and high-value keywords (e.g., “Leverage AI to …”, “How to…”), include recognizable names and topical keywords early, and reduce or move “| Masters of Scale” to the end. Avoid generic hashtag-first titles.  
+  **Rationale:** Top titles clearly state the benefit and include “AI” and event labels; high-performing short titles explicitly communicated the value. Recent titles often start with “How to know which #feedback…” or include summit branding first, which may weaken immediate click appeal.  
+  **Confidence:** High — observed correlation between clear, benefit-led titles and top viewership.
+
+- **Improvement Area:** Description & engagement prompts  
+  **Recommendation:** Add a short, visible engagement prompt in the top lines of the description and pin a specific question in the top comment (e.g., “Which part would you try? Comment below.”). Also include a one-line TL;DR at the top that repeats the hook from the title.  
+  **Rationale:** Average comments are extremely low (avg 2). Top videos with event sign-ups likely had clear CTAs driving interaction; adding a single explicit question or CTA increases likelihood of comments/likes. Recent descriptions are long and promotional but lack immediate engagement prompts at the top.  
+  **Confidence:** Medium — common YouTube best practice and consistent with low comment numbers; direct evidence on this channel is inferential.
+
+- **Improvement Area:** Repurposing strategy (shorts vs long form)  
+  **Recommendation:** For each long-form episode, publish a coordinated release: (A) the full episode, (B) 4–6 single-insight clips across 30–90s, and (C) a 1-minute “best-of” trailer. Stagger these across several days to maintain momentum.  
+  **Rationale:** The channel already publishes both long and short versions for Chomps; the short performed much better. Top assets included short promotional pieces tied to events. Coordinated repurposing allows the channel to capture both long-form listeners and discovery-hungry short-form audiences.  
+  **Confidence:** High — direct internal example shows shorts outperforming long form for the same content.
+
+- **Improvement Area:** Topic tagging & keyword alignment  
+  **Recommendation:** Use high-performing topical tags and keywords observed in top videos (e.g., “AI”, “artificial intelligence”, “strategy session”, speakers’ names) and replicate tag structure from top-performing posts when appropriate. Also include trend keywords in the first 1–2 description lines.  
+  **Rationale:** The highest-view videos include explicit AI tags and related keywords; recent underperforming videos use more generic podcast tags and summit labels. Better alignment with high-volume search terms likely aids discovery.  
+  **Confidence:** Medium — tags and keywords are correlated with top video themes; exact SEO impact can vary.
+
+- **Improvement Area:** Titles that invite engagement (questions / controversy)  
+  **Recommendation:** Occasionally test titles that pose a direct question or controversial/contrasting statement with clear stakes (e.g., “Why social media marketing is dead for founders” or “We were wrong about X — here’s what worked”).  
+  **Rationale:** Top-performing longer pieces tackle big-picture claims (industry disruption, unicorn maps). Titles that set stakes or a contrarian view can increase clicks and comments. Recent summit clips are often neutral descriptive statements, which may underperform compared to higher-stakes phrasing.  
+  **Confidence:** Medium — supported by topical nature of top videos, but headline testing required.
+
+- **Improvement Area:** Calls-to-action for likes (micro-CTAs)  
+  **Recommendation:** Add a one-line micro-CTA in both the video opener and the top description line asking viewers to like if they found the insight useful, and pin a follow-up comment asking viewers to vote (e.g., “Like for more AI clips, comment for founder stories”).  
+  **Rationale:** Average likes (177) and comments (2) are low; explicit micro-CTAs tied to content type can nudge behavior. The 48s top video with 24k likes likely benefitted from either strong resonance or clear CTA/registration push — micro-CTAs help replicate that engagement.  
+  **Confidence:** Medium — standard growth tactic; channel-specific effectiveness inferred.
+
+Summary — three most impactful changes (estimated effect sizes)
+1. Prioritize AI/big-trend topics and produce short strategy clips about them — Estimated effect on average views: +200% to +1000% for posts that hit the trend (based on AI shorts getting 575k–906k vs typical recent clips in low thousands). Estimated effect on likes/comments: +500%+. Confidence: High (based on direct view gap).
+2. Publish more very short clips (<60s) extracted from long episodes and increase daily frequency — Estimated effect on average views per upload: +50% to +300% (daily short cadence correlated with ~22k average vs channel avg ~6.7k); overall channel reach increases as more discoverable clips are created. Estimated effect on engagement: +100% for likes, +50–200% for comments (with CTAs). Confidence: High (internal example where a short outperformed the long form).
+3. Optimize titles + top-line description CTAs (front-load hook, add explicit engagement question) — Estimated effect on engagement and click-through: +20% to +100% for views on similar content; likes/comments +30–150% (improved click appeal and direct prompts). Confidence: Medium-High (clear correlation between strong value-led titles and top videos; standard CTA uplift).
+
+",2025-10-13

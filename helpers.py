@@ -2,7 +2,8 @@ import pandas as pd
 import altair as alt
 import numpy as np
 import streamlit as st
-import pickle, sklearn, openai, tiktoken
+from datetime import datetime
+import pickle, sklearn, openai, tiktoken, requests, base64, os
 
 MAX_TOKENS = 8000  # safe under the 8191 limit
 MODEL_PATH = "files/model-uplift-0927.pkl"
@@ -76,6 +77,41 @@ def add_emb_to_chroma(collection, id, emb, doc):
         ids=[id],
         embeddings=[emb] if emb is not None else None
     )
+
+
+def add_images_to_chroma(collection, co_ef, docs, ids=None):
+    ids = ids if ids else [str(i) for i in range(len(docs))]
+
+    # Process in batches of 35 (300000 (max tpr) / 8000 (max tpd))
+    batch_size = 35
+    for i in range(0, len(docs), batch_size):
+        batch_docs = docs[i:i + batch_size]
+        batch_ids = ids[i:i + batch_size]
+        print(f"Processing batch {i // batch_size + 1}")
+
+        # Download images
+        images = []
+        for doc in batch_docs:
+            img_url = doc['image']
+            img_data = requests.get(img_url).content
+            img_b64 = base64.b64encode(img_data).decode("utf-8")
+            images.append(f"data:image/jpeg;base64,{img_b64}")
+
+        resp = co_ef.embed(model="embed-v4.0", images=images)
+        embeddings = resp.embeddings
+
+        metadatas = {
+            'images': [doc['image'] for doc in batch_docs],
+            'text': [doc['text'] for doc in batch_docs],
+            'channel': [doc['channel'] for doc in batch_docs]
+        }
+
+        collection.add(
+            metadatas=batch_docs,
+            embeddings=embeddings,
+            ids=batch_ids,
+        )
+
 
   
 # ----- Predictions -----
@@ -259,6 +295,58 @@ def get_most_similar_videos(df_videos, video_collection, video_id, n_similar=3):
 
     return top_videos
 
+def get_most_similar_thumbnails(df_videos, co_ef, thumbnail_collection, video_id, n_similar=3):
+    # Get embedding
+    thumbnail_docs = get_from_chroma_with_ids(thumbnail_collection, [video_id])
+    thumbnail_emb = thumbnail_docs.get('embeddings')
+
+    if thumbnail_emb is None or not len(thumbnail_emb):
+        print("Uploading images to chroma")
+        # Upload image
+        vid = df_videos[df_videos['id'] == video_id]
+        doc = {
+            'image': vid['thumbnail'].values[0],
+            'text': vid['title'].values[0],
+            'channel': vid['channel_id'].values[0]
+        }
+
+        add_images_to_chroma(thumbnail_collection, co_ef, [doc], [video_id])
+        # Grab embedding
+        thumbnail_docs = get_from_chroma_with_ids(thumbnail_collection, [video_id])
+        thumbnail_emb = thumbnail_docs.get('embeddings')
+        if thumbnail_emb is None or not len(thumbnail_emb):
+            return []
+
+    # Query with embedding
+    top_thumbnail_docs = thumbnail_collection.query(
+        query_embeddings=thumbnail_emb,
+        n_results=4,
+    )
+    ids = top_thumbnail_docs.get('ids')
+    if ids is None or not len(ids):
+        return None
+    # 2d array returned - grab list
+    if type(ids[0]) in [np.ndarray, list] and len(ids[0]):
+        ids = ids[0]
+
+    scores = top_thumbnail_docs.get('distances')
+    print(f"Scores: {scores}")
+    print(f"Ids: {ids}")
+    # Remove query video
+    ids.remove(video_id)
+
+    top_videos = df_videos[df_videos['id'].isin(ids)]
+    top_videos = top_videos.drop_duplicates('title')
+    top_videos = top_videos.reset_index(drop=True)
+    top_videos = top_videos.iloc[:n_similar]
+    top_videos = top_videos.sort_values(by='views', ascending=False)
+    print(top_videos[['title', 'views', 'channel_title']].to_string())
+
+    return top_videos
+
+
+
+# ----- AI -----
 
 def rewrite_title(video, openai_api_key):
     client = openai.OpenAI(api_key=openai_api_key)
@@ -281,6 +369,226 @@ def rewrite_title(video, openai_api_key):
     if not output:
          return None
     return output[0].text
+
+
+def get_recent_cadence_performance(df_videos, channel_id):
+    channel_videos = df_videos[df_videos['channel_id'] == channel_id]
+
+    channel_videos['published_at_datetime'] = pd.to_datetime(channel_videos['published_at'], utc=True)
+    channel_videos = channel_videos.sort_values(by='published_at_datetime')
+    # Grab only videos in past year
+    one_year_ago = pd.Timestamp.utcnow() - pd.Timedelta(days=365)
+    channel_videos = channel_videos[channel_videos['published_at_datetime'] > one_year_ago]
+
+    oldest = channel_videos['published_at_datetime'].min()
+
+    channel_videos['day'] = (channel_videos['published_at_datetime'].dt.floor('D') - oldest.normalize()).dt.days
+    channel_videos['week'] = ((channel_videos['published_at_datetime'] - oldest) / pd.Timedelta(weeks=1)).astype(int)
+    channel_videos['month'] = ((channel_videos['published_at_datetime'].dt.year - oldest.year) * 12 + (channel_videos['published_at_datetime'].dt.month - oldest.month))
+
+    weekly = channel_videos.groupby('week')
+    monthly = channel_videos.groupby('month')
+    
+    daily_rate = (weekly.size() >= 4).mean()
+    weekly_rate = ((weekly.size() <= 3) & (weekly.size() > 0)).mean()
+    monthly_rate = ((monthly.size() <= 2) & (monthly.size() > 0)).mean()
+
+    weekly_views = weekly['views'].sum()
+    monthly_views = monthly['views'].sum()
+    daily_avg_views = weekly_views[weekly.size() >= 4].mean()
+    weekly_avg_views = weekly_views[(weekly.size() <= 3) & (weekly.size() > 0)].mean()
+    monthly_avg_views = monthly_views[(monthly.size() <= 2) & (monthly.size() > 0)].mean()
+
+    if not daily_rate:
+        daily_avg_views = 0
+        daily_rate = 0
+    if not weekly_rate:
+        weekly_avg_views = 0
+        weekly_rate = 0
+    if not monthly_rate:
+        monthly_avg_views = 0
+        monthly_rate = 0
+    
+    return ("Daily", "Weekly", "Monthly"), \
+     (daily_rate, weekly_rate, monthly_rate), \
+     (daily_avg_views, weekly_avg_views, monthly_avg_views)
+
+
+def get_recent_duration_performance(df_videos, channel_id):
+    channel_videos = df_videos[df_videos['channel_id'] == channel_id]
+
+    channel_videos['published_at_datetime'] = pd.to_datetime(channel_videos['published_at'], utc=True)
+    channel_videos = channel_videos.sort_values(by='published_at_datetime')
+    # Grab only videos in past year
+    one_year_ago = pd.Timestamp.utcnow() - pd.Timedelta(days=365)
+    channel_videos = channel_videos[channel_videos['published_at_datetime'] > one_year_ago]
+
+    channel_videos['video_type'] = channel_videos['duration'].apply(
+        lambda x: 'Short' if x < 3*60 else 'Clip' if x < 20*60 else 'Full'
+    )
+
+    short_views = channel_videos[channel_videos['video_type'] == 'Short']['views'].mean()
+    clip_views = channel_videos[channel_videos['video_type'] == 'Clip']['views'].mean()
+    full_views = channel_videos[channel_videos['video_type'] == 'Full']['views'].mean()
+
+    return ("Short (<3M)", "Clip (<20M)", "Long Form (≥20M)"), \
+     (short_views, clip_views, full_views)
+
+
+def get_channel_improvement(df_videos, channel_id, output_path, openai_api_key):
+    """
+    Suggests improvements for a YouTube channel based on recent and high-performing videos,
+    publishing cadence, and video duration analysis.
+
+    Retrieves (and caches) a summary of:
+      - The 5 most recent videos (title, metadata, stats, and tags)
+      - The 5 most popular videos (title, metadata, stats, and tags)
+      - Aggregate channel performance (average likes, views, comments)
+      - Publishing cadence breakdown (daily, weekly, monthly rates and view averages)
+      - Performance by video duration (Short, Clip, Long Form)
+
+    Uses OpenAI to generate a natural-language improvement summary, based on the above, 
+    for the given channel ID.
+
+    Args:
+        df_videos: Pandas DataFrame of video metadata.
+        channel_id: YouTube channel ID string.
+        output_path: Path to where channel improvement summaries may be cached/saved.
+        openai_api_key: OpenAI API key for text generation.
+
+    Returns:
+        A markdown-formatted string containing the natural-language improvement plan.
+    """
+    output = read_channel_improvement(channel_id, output_path)
+    if output is not None:
+      return output
+
+    channel_videos = df_videos[df_videos['channel_id'] == channel_id]
+    channel_name = channel_videos.iloc[0]['channel_title']
+    name_str = f"Channel name: {channel_name}"
+
+    # Get recent videos - drop extra data (description)
+    channel_videos = channel_videos.sort_values(by='published_at', ascending=False)
+    recent_channel_videos = channel_videos.iloc[:5]
+    recent_str = "5 most recent channel videos:\n\n"
+    for i in range(len(recent_channel_videos)):
+        video = recent_channel_videos.iloc[i]
+        recent_str += video['embedding_text']
+        recent_str += f"\n## views: {video['views']} likes: {video['likes']} comments {video['comments']}\n"
+        recent_str += f"## Tags: {video['tags']}"
+        if i < len(recent_channel_videos) - 1:
+            recent_str += "\n\n---\n"
+
+    # Get popular videos - drop extra data (description)
+    channel_videos = channel_videos.sort_values(by='views', ascending=False)
+    high_view_channel_videos = channel_videos.iloc[:5]
+    popular_str = "5 most popular channel videos:\n\n"
+    for i in range(len(high_view_channel_videos)):
+        video = high_view_channel_videos.iloc[i]
+        popular_str += video['embedding_text']
+        popular_str += f"\n## views: {video['views']} likes: {video['likes']} comments {video['comments']}\n"
+        popular_str += f"## Tags: {video['tags']}"
+        if i < len(high_view_channel_videos) - 1:
+            popular_str += "\n\n---\n"
+
+    # Performance
+    avg_likes = channel_videos['likes'].mean()
+    avg_views = channel_videos['views'].mean()
+    avg_comments = channel_videos['comments'].mean()
+    performance_str = f"Avg likes: {avg_likes:.0f}\nAvg views: {avg_views:.0f}\nAvg comments: {avg_comments:.0f}"
+
+    # Cadence
+    cadence, rate, avg_cadence_views = get_recent_cadence_performance(df_videos, channel_id)  
+    cadence_str = f"Cadence:"  
+    for i in range(len(cadence)):
+        cadence_str += f" {cadence[i]} - rate {rate[i]}% of the time - avg views ({avg_cadence_views[i]:.0f})"
+        if i < len(cadence) - 1:
+            cadence_str += ","
+    
+    # Duration
+    duration_type, avg_duration_views = get_recent_duration_performance(df_videos, channel_id)
+    duration_str = f"Duration:"  
+    for i in range(len(duration_type)):
+        duration_str += f" {duration_type[i]} - avg views ({avg_duration_views[i]:.0f})"
+        if i < len(duration_type) - 1:
+            duration_str += ","
+
+    header_str = "\n\n".join([name_str, performance_str, cadence_str, duration_str])
+    context = f"""{header_str}\n\n---\n\n{recent_str}\n\n\n---\n\n{popular_str}"""
+
+    prompt = f"""Below are statistics, recent videos, and top-performing videos from a YouTube channel. Identify data-grounded ways to increase average views and engagement (likes/comments). Base recommendations only on observed differences in titles, topics, durations, and posting cadence, descriptions, etc. Return results as a bulleted list with bolded headers: Improvement Area, Recommendation, Rationale, and Confidence for each bullet. Compare trends between recent and top-performing videos. At the end, summarize the 3 most impactful changes by estimated effect size. Do not ask if the user would like further assistance.
+
+    {context}
+    """
+
+    client = openai.OpenAI(api_key=openai_api_key)
+    response = client.responses.create(
+        model="gpt-5-mini",
+        input=prompt
+    )
+    print("Querying GPT")
+    if type(response) == str:
+        return response
+    if not hasattr(response, "output"):
+        return None
+    output = response.output
+    if not output and len(output) < 2:
+         return None
+    output = output[1].content
+    if not output:
+         return None
+
+    save_channel_improvement(channel_id, output[0].text, output_path)
+    return output[0].text
+
+
+def read_channel_improvement(channel_id, path):
+    """
+    Reads the channel improvement output for a given channel_id from the specified CSV path.
+    Returns None if the file does not exist or if the last saved date is 7 days ago or older.
+    """
+    if not os.path.exists(path):
+        return None
+
+    try:
+        df = pd.read_csv(path)
+    except Exception:
+        return None
+    if channel_id not in df['channel_id'].values:
+        return None
+
+    row = df[df['channel_id'] == channel_id].iloc[0]
+    saved_date = pd.to_datetime(row['date'])
+    one_week_ago = pd.to_datetime(datetime.now().date()) - pd.Timedelta(days=7)
+    if saved_date < one_week_ago:
+        return None
+
+    return row['output']
+
+
+def save_channel_improvement(channel_id, output, path):
+    """
+    Saves the channel improvement output to a CSV file,
+    updating the existing row if channel_id exists, or appending otherwise. 
+    """
+    date = datetime.now().date()
+    if not os.path.exists(path):
+        # Save a new dataframe
+        df = pd.DataFrame([{"channel_id": channel_id, "output": output, "date": date}])
+        df.to_csv(path, index=False)
+        return
+
+    # Write/overwrite in csv
+    df = pd.read_csv(path)
+    if channel_id in df['channel_id'].values:
+        df.loc[df['channel_id'] == channel_id, 'output'] = output
+        df.loc[df['channel_id'] == channel_id, 'date'] = date
+    else:
+        df = pd.concat([
+            df, pd.DataFrame([{"channel_id": channel_id, "output": output, "date": date}])
+        ], ignore_index=True)
+    df.to_csv(path, index=False)
+
 
 
 # ----- Plots -----
@@ -583,6 +891,116 @@ def plot_work_per_video_type(df_videos, channel_id):
     ).properties(
         title="Is the effort worth the views? (Median views per production cost)",
         height=400
+    ).configure_title(
+        fontSize=16,
+        anchor='middle',
+    )
+
+    return chart
+
+
+@st.cache_data
+def plot_cadence(df_videos, channel_id):
+
+    channel_videos = df_videos[df_videos['channel_id'] == channel_id]
+
+    channel_videos['published_at_datetime'] = pd.to_datetime(channel_videos['published_at'], utc=True)
+    channel_videos = channel_videos.sort_values(by='published_at_datetime')
+
+    print(channel_videos['published_at_datetime'].min())
+
+    # Grab total days/weeks/months since first publishing
+    oldest = channel_videos['published_at_datetime'].min()
+
+    channel_videos['day'] = (channel_videos['published_at_datetime'].dt.floor('D') - oldest.normalize()).dt.days
+    channel_videos['week'] = ((channel_videos['published_at_datetime'] - oldest) / pd.Timedelta(weeks=1)).astype(int)
+    channel_videos['month'] = ((channel_videos['published_at_datetime'].dt.year - oldest.year) * 12 + (channel_videos['published_at_datetime'].dt.month - oldest.month))
+
+    daily = channel_videos.groupby('day')
+    weekly = channel_videos.groupby('week')
+    monthly = channel_videos.groupby('month')
+    
+    daily_rate = (weekly.size() >= 3).mean()
+    weekly_rate = ((weekly.size() <= 2) & (weekly.size() > 0)).mean()
+    monthly_rate = ((monthly.size() <= 2) & (monthly.size() > 0)).mean()
+
+    weekly_views = weekly['views'].sum()
+    monthly_views = monthly['views'].sum()
+    daily_median_views = weekly_views[weekly.size() >= 3].mean()
+    weekly_median_views = weekly_views[(weekly.size() <= 2) & (weekly.size() > 0)].mean()
+    monthly_median_views = monthly_views[(monthly.size() <= 2) & (monthly.size() > 0)].mean()
+
+    if not daily_rate:
+        daily_median_views = 0
+        daily_rate = 0
+    if not weekly_rate:
+        weekly_median_views = 0
+        weekly_rate = 0
+    if not monthly_rate:
+        monthly_median_views = 0
+        monthly_rate = 0
+
+    # Define the desired order 
+    order = ['Daily', 'Weekly', 'Monthly']
+
+    df = pd.DataFrame({
+        'Cadence Type': order,
+        'Views': [daily_median_views, weekly_median_views, monthly_median_views],
+        'Cadence': [daily_rate, weekly_rate, monthly_rate],
+        'Order': range(len(order))
+    })
+
+
+    label_padding = \
+        15 if df['Cadence'].min() >= 0.1 \
+        else 25 if df.loc[df['Cadence'].idxmin(), 'Views'] <= 200000 \
+        else 45
+
+    # Chart
+    scatter = alt.Chart(df).mark_circle().encode(
+        x=alt.X('Cadence Type:N', sort=order,
+                axis=alt.Axis(labels=True, ticks=False, labelAngle=0, labelPadding=label_padding)
+        ),
+        y=alt.Y(
+            'Cadence:Q',
+            scale=alt.Scale(domain=[0,1.]),
+            axis=alt.Axis(tickCount=6, title="Percentage of posts at cadence", format='.0%')
+        ),
+        size=alt.Size(
+            'Views:Q',
+            scale=alt.Scale(range=[1000, 10000]),
+            legend=None
+        ),
+        color=alt.Color(
+            'Cadence Type:N',
+            legend=None
+        ),
+        tooltip=[
+            # alt.Tooltip('Views:Q', title='Total Views', format=',.0f'),
+            # alt.Tooltip('Cadence:Q', title='Cadence', format='.0%')
+        ]
+    )
+
+    labels = alt.Chart(df).mark_text(
+        align='center',
+        baseline='middle',
+        color='white'
+    ).encode(
+        x=alt.X('Cadence Type:N', sort=order),
+        y='Cadence:Q',
+        text=alt.Text('Views:Q', format=',.0f'),
+        tooltip=[
+            alt.Tooltip('Views:Q', title='Avg Views', format=',.0f'),
+            alt.Tooltip('Cadence:Q', title='Cadence', format='.0%')
+        ]
+    )
+
+
+    chart = alt.layer(
+      scatter + labels, 
+    ).properties(
+        title="Is this the right cadence? (Avg views per cadence)",
+        height=450
     ).configure_title(
         fontSize=16,
         anchor='middle',
